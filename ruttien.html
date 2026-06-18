@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ThíchTiền - Rút Tiền</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Be Vietnam Pro', sans-serif; background: #0a0a14; color: #fff; min-height: 100vh; padding-bottom: 30px; }
+  .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 200; }
+  .sidebar-overlay.show { display: block; }
+  .sidebar { position: fixed; top: 0; left: -260px; width: 260px; height: 100%; background: #13132a; border-right: 1px solid #222244; z-index: 201; transition: left .25s ease; }
+  .sidebar.show { left: 0; }
+  .sidebar-header { padding: 24px 20px 16px; border-bottom: 1px solid #222244; font-size: 1.1rem; font-weight: 800; }
+  .sidebar-header span { color: #a78fff; }
+  .sidebar-user { display: flex; align-items: center; gap: 10px; padding: 14px 20px; border-bottom: 1px solid #222244; }
+  .sidebar-user img { width: 38px; height: 38px; border-radius: 50%; border: 2px solid #6c47ff; }
+  .sidebar-user .uname { font-size: .88rem; font-weight: 700; }
+  .sidebar-user .utag { font-size: .72rem; color: #6666aa; }
+  .sidebar-menu { padding: 12px 0; }
+  .sidebar-item { display: flex; align-items: center; gap: 14px; padding: 15px 20px; font-size: .95rem; font-weight: 600; color: #9999bb; cursor: pointer; transition: all .2s; }
+  .sidebar-item:hover { background: #1e1e3a; color: #fff; }
+  .sidebar-item.active { color: #a78fff; background: rgba(108,71,255,.1); }
+  .sidebar-item .s-icon { font-size: 1.2rem; width: 24px; text-align: center; }
+  .sidebar-logout { margin: 8px 16px; padding: 11px; background: rgba(255,50,50,.1); border: 1px solid rgba(255,50,50,.2); border-radius: 10px; color: #ff6666; font-size: .85rem; font-weight: 700; cursor: pointer; text-align: center; }
+  .sidebar-logout:hover { background: rgba(255,50,50,.2); }
+  .header { padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; background: #0a0a14; border-bottom: 1px solid #111128; z-index: 100; }
+  .logo-text { font-size: 1.1rem; font-weight: 800; }
+  .logo-text span { color: #a78fff; }
+  .icon-btn { width: 40px; height: 40px; background: #1a1a2e; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; cursor: pointer; }
+  .user-info { display: flex; align-items: center; gap: 8px; }
+  .user-info img { width: 34px; height: 34px; border-radius: 50%; border: 2px solid #6c47ff; display: none; }
+  .user-info span { font-size: .82rem; font-weight: 700; color: #a78fff; }
+  .wrap { padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+  .stat-card { background: #13132a; border: 1px solid #222244; border-radius: 16px; padding: 18px 16px; position: relative; overflow: hidden; }
+  .stat-card .label { font-size: .67rem; font-weight: 700; color: #6666aa; letter-spacing: .5px; text-transform: uppercase; margin-bottom: 10px; }
+  .stat-card .value { font-size: 1.7rem; font-weight: 800; }
+  .stat-card .unit { font-size: 1rem; font-weight: 700; }
+  .stat-card .sub { font-size: .73rem; color: #6666aa; margin-top: 6px; }
+  .stat-card .card-icon { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); font-size: 1.6rem; opacity: .5; }
+  .purple { color: #a78fff; }
+  .method-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .method-item { background: #13132a; border: 2px solid #222244; border-radius: 14px; padding: 16px; text-align: center; cursor: pointer; transition: all .2s; }
+  .method-item:hover { border-color: #6c47ff; background: rgba(108,71,255,.08); }
+  .method-item.selected { border-color: #6c47ff; background: rgba(108,71,255,.15); }
+  .method-item .mi { font-size: 1.8rem; margin-bottom: 6px; }
+  .method-item .mn { font-size: .82rem; font-weight: 700; }
+  .method-item .ms { font-size: .7rem; color: #7777aa; margin-top: 3px; }
+  .form-card { background: #13132a; border: 1px solid #222244; border-radius: 16px; padding: 20px; display: none; }
+  .form-card.show { display: block; }
+  .form-card h3 { font-size: .95rem; font-weight: 700; margin-bottom: 14px; }
+  .form-input { width: 100%; background: #0a0a14; border: 1px solid #222244; border-radius: 10px; padding: 12px 14px; color: #fff; font-size: .9rem; font-family: inherit; outline: none; margin-bottom: 10px; }
+  .form-input:focus { border-color: #6c47ff; }
+  .form-select { width: 100%; background: #0a0a14; border: 1px solid #222244; border-radius: 10px; padding: 12px 14px; color: #fff; font-size: .9rem; font-family: inherit; outline: none; margin-bottom: 10px; appearance: none; }
+  .form-select:focus { border-color: #6c47ff; }
+  .amount-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+  .amount-chip { background: #1a1a2e; border: 1px solid #222244; border-radius: 8px; padding: 7px 14px; font-size: .8rem; font-weight: 700; cursor: pointer; transition: all .2s; }
+  .amount-chip:hover { border-color: #6c47ff; color: #a78fff; }
+  .btn-submit { width: 100%; background: #6c47ff; border: none; border-radius: 10px; padding: 13px; color: #fff; font-size: .9rem; font-weight: 700; font-family: inherit; cursor: pointer; transition: opacity .2s; }
+  .btn-submit:hover { opacity: .85; }
+  .btn-submit:disabled { opacity: .5; cursor: not-allowed; }
+  .form-note { font-size: .75rem; color: #6666aa; margin-top: 8px; line-height: 1.6; }
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #22c55e; color: #fff; padding: 12px 24px; border-radius: 12px; font-size: .88rem; font-weight: 700; z-index: 999; display: none; }
+  .toast.error { background: #ef4444; }
+  .loading-screen { position: fixed; inset: 0; background: #0a0a14; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 999; gap: 16px; }
+  .loading-screen .logo { font-size: 1.5rem; font-weight: 800; }
+  .loading-screen .logo span { color: #a78fff; }
+  .spinner { width: 36px; height: 36px; border: 3px solid #222244; border-top-color: #6c47ff; border-radius: 50%; animation: spin .7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div class="loading-screen" id="loading">
+  <div class="logo">Thích<span>Tiền</span></div>
+  <div class="spinner"></div>
+  <div style="font-size:.8rem;color:#6666aa">Đang tải...</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="sidebar-overlay" id="overlay"></div>
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-header">Thích<span>Tiền</span></div>
+  <div class="sidebar-user">
+    <img id="sidebar-avatar" src="" />
+    <div>
+      <div class="uname" id="sidebar-name">...</div>
+      <div class="utag">Thành viên</div>
+    </div>
+  </div>
+  <div class="sidebar-menu">
+    <div class="sidebar-item" onclick="location.href='/app'"><span class="s-icon">🏠</span> Dashboard</div>
+    <div class="sidebar-item" onclick="location.href='/nhiemvu'"><span class="s-icon">⚡</span> Nhiệm Vụ</div>
+    <div class="sidebar-item active" onclick="location.href='/ruttien'"><span class="s-icon">💸</span> Rút Tiền</div>
+    <div class="sidebar-item" onclick="location.href='/lichsu'"><span class="s-icon">📋</span> Lịch Sử</div>
+    <div class="sidebar-item" onclick="location.href='/invite'"><span class="s-icon">👥</span> Mời Bạn Bè</div>
+  </div>
+  <div class="sidebar-logout" id="btn-logout">🚪 Đăng xuất</div>
+</div>
+
+<div class="header">
+  <div class="icon-btn" id="menu-btn">☰</div>
+  <div class="logo-text">Thích<span>Tiền</span></div>
+  <div class="user-info">
+    <img id="header-avatar" />
+    <span id="header-name"></span>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="stat-card">
+    <div class="label">Số dư khả dụng</div>
+    <div class="value purple" id="balance">0 <span class="unit purple">đ</span></div>
+    <div class="sub">Tối thiểu rút: 50.000đ</div>
+    <div class="card-icon">💸</div>
+  </div>
+
+  <div style="font-size:.9rem;font-weight:700">💳 Chọn hình thức rút</div>
+  <div class="method-grid">
+    <div class="method-item" data-method="bank" onclick="selectMethod(this)">
+      <div class="mi">🏦</div>
+      <div class="mn">Ngân hàng</div>
+      <div class="ms">Nhận trong 24h</div>
+    </div>
+    <div class="method-item" data-method="sieuvre" onclick="selectMethod(this)">
+      <div class="mi">⚡</div>
+      <div class="mn">Thẻ Siêu Rẻ</div>
+      <div class="ms">Nhận ngay</div>
+    </div>
+    <div class="method-item" data-method="fast" onclick="selectMethod(this)">
+      <div class="mi">🚀</div>
+      <div class="mn">Gạch thẻ Fast</div>
+      <div class="ms">Nhận trong 1h</div>
+    </div>
+    <div class="method-item" data-method="thecao" onclick="selectMethod(this)">
+      <div class="mi">🎴</div>
+      <div class="mn">Thẻ cào</div>
+      <div class="ms">Nhận trong 5p</div>
+    </div>
+  </div>
+
+  <!-- NGÂN HÀNG -->
+  <div class="form-card" id="form-bank">
+    <h3>🏦 Rút về ngân hàng</h3>
+    <input class="form-input" id="bank-name" placeholder="Tên ngân hàng (VD: Vietcombank)" />
+    <input class="form-input" id="bank-account" placeholder="Số tài khoản" />
+    <input class="form-input" id="bank-owner" placeholder="Tên chủ tài khoản" />
+    <div class="amount-row">
+      <div class="amount-chip" onclick="setAmount(50000)">50K</div>
+      <div class="amount-chip" onclick="setAmount(100000)">100K</div>
+      <div class="amount-chip" onclick="setAmount(200000)">200K</div>
+      <div class="amount-chip" onclick="setAmount(500000)">500K</div>
+    </div>
+    <input class="form-input" id="bank-amount" placeholder="Số tiền (đ)" type="number" />
+    <button class="btn-submit" onclick="submitRut('bank')">Gửi yêu cầu rút tiền</button>
+    <div class="form-note">⏱ Xử lý trong 24 giờ làm việc</div>
+  </div>
+
+  <!-- SIÊU RẺ -->
+  <div class="form-card" id="form-sieuvre">
+    <h3>⚡ Rút qua Thẻ Siêu Rẻ</h3>
+    <select class="form-select" id="sr-nha-mang">
+      <option value="">Chọn nhà mạng</option>
+      <option>Viettel</option>
+      <option>Mobifone</option>
+      <option>Vinaphone</option>
+      <option>Vietnamobile</option>
+    </select>
+    <select class="form-select" id="sr-menh-gia">
+      <option value="">Chọn mệnh giá</option>
+      <option value="10000">10.000đ</option>
+      <option value="20000">20.000đ</option>
+      <option value="50000">50.000đ</option>
+      <option value="100000">100.000đ</option>
+      <option value="200000">200.000đ</option>
+      <option value="500000">500.000đ</option>
+    </select>
+    <input class="form-input" id="sr-sdt" placeholder="Số điện thoại nhận thẻ" type="tel" />
+    <button class="btn-submit" onclick="submitRut('sieuvre')">Đổi thẻ Siêu Rẻ</button>
+    <div class="form-note">✅ Nhận thẻ ngay sau khi xác nhận</div>
+  </div>
+
+  <!-- FAST -->
+  <div class="form-card" id="form-fast">
+    <h3>🚀 Gạch thẻ Fast</h3>
+    <select class="form-select" id="fast-nha-mang">
+      <option value="">Chọn nhà mạng</option>
+      <option>Viettel</option>
+      <option>Mobifone</option>
+      <option>Vinaphone</option>
+    </select>
+    <select class="form-select" id="fast-menh-gia">
+      <option value="">Chọn mệnh giá</option>
+      <option value="50000">50.000đ</option>
+      <option value="100000">100.000đ</option>
+      <option value="200000">200.000đ</option>
+      <option value="500000">500.000đ</option>
+    </select>
+    <input class="form-input" id="fast-sdt" placeholder="Số điện thoại" type="tel" />
+    <button class="btn-submit" onclick="submitRut('fast')">Gạch thẻ Fast</button>
+    <div class="form-note">⏱ Xử lý trong 1 giờ</div>
+  </div>
+
+  <!-- THẺ CÀO -->
+  <div class="form-card" id="form-thecao">
+    <h3>🎴 Đổi thẻ cào</h3>
+    <select class="form-select" id="tc-nha-mang">
+      <option value="">Chọn nhà mạng</option>
+      <option>Viettel</option>
+      <option>Mobifone</option>
+      <option>Vinaphone</option>
+      <option>Vietnamobile</option>
+      <option>Gmobile</option>
+    </select>
+    <select class="form-select" id="tc-menh-gia">
+      <option value="">Chọn mệnh giá</option>
+      <option value="10000">10.000đ</option>
+      <option value="20000">20.000đ</option>
+      <option value="50000">50.000đ</option>
+      <option value="100000">100.000đ</option>
+      <option value="200000">200.000đ</option>
+      <option value="500000">500.000đ</option>
+    </select>
+    <button class="btn-submit" onclick="submitRut('thecao')">Đổi thẻ cào</button>
+    <div class="form-note">⚡ Nhận mã thẻ trong 5 phút</div>
+  </div>
+</div>
+
+<script>
+  const BIN_ID = '6a3369d5f5f4af5e290621bc';
+  const API_KEY = '$2a$10$YVH3jNV8udYSofwkiyZlKeu6hhKSJtlzT0NgddUf49roykSuQPhKq';
+  const BASE_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
+
+  let currentUser = null;
+  let userData = {};
+  let binData = {};
+  let selectedMethod = null;
+
+  async function getBin() {
+    const r = await fetch(BASE_URL + '/latest', { headers: { 'X-Access-Key': API_KEY } });
+    const d = await r.json();
+    return d.record;
+  }
+
+  async function saveBin(data) {
+    await fetch(BASE_URL, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'X-Access-Key': API_KEY },
+      body: JSON.stringify(data)
+    });
+  }
+
+  function showToast(msg, error) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast' + (error ? ' error' : '');
+    t.style.display = 'block';
+    setTimeout(() => t.style.display = 'none', 3000);
+  }
+
+  function selectMethod(el) {
+    document.querySelectorAll('.method-item').forEach(i => i.classList.remove('selected'));
+    el.classList.add('selected');
+    selectedMethod = el.dataset.method;
+    document.querySelectorAll('.form-card').forEach(f => f.classList.remove('show'));
+    document.getElementById('form-' + selectedMethod).classList.add('show');
+  }
+
+  function setAmount(val) {
+    document.getElementById('bank-amount').value = val;
+  }
+
+  async function submitRut(method) {
+    const balance = userData.balance || 0;
+    let amount = 0;
+    let desc = '';
+
+    if (method === 'bank') {
+      amount = parseInt(document.getElementById('bank-amount').value) || 0;
+      const bankName = document.getElementById('bank-name').value.trim();
+      const acc = document.getElementById('bank-account').value.trim();
+      const owner = document.getElementById('bank-owner').value.trim();
+      if (!bankName || !acc || !owner || !amount) { showToast('Vui lòng điền đầy đủ thông tin!', true); return; }
+      desc = `Rút ngân hàng ${bankName} - ${acc}`;
+    } else if (method === 'sieuvre') {
+      const nm = document.getElementById('sr-nha-mang').value;
+      const mg = document.getElementById('sr-menh-gia').value;
+      const sdt = document.getElementById('sr-sdt').value.trim();
+      if (!nm || !mg || !sdt) { showToast('Vui lòng điền đầy đủ!', true); return; }
+      amount = parseInt(mg);
+      desc = `Thẻ Siêu Rẻ ${nm} ${(amount/1000).toFixed(0)}K - ${sdt}`;
+    } else if (method === 'fast') {
+      const nm = document.getElementById('fast-nha-mang').value;
+      const mg = document.getElementById('fast-menh-gia').value;
+      const sdt = document.getElementById('fast-sdt').value.trim();
+      if (!nm || !mg || !sdt) { showToast('Vui lòng điền đầy đủ!', true); return; }
+      amount = parseInt(mg);
+      desc = `Gạch Fast ${nm} ${(amount/1000).toFixed(0)}K - ${sdt}`;
+    } else if (method === 'thecao') {
+      const nm = document.getElementById('tc-nha-mang').value;
+      const mg = document.getElementById('tc-menh-gia').value;
+      if (!nm || !mg) { showToast('Vui lòng chọn đầy đủ!', true); return; }
+      amount = parseInt(mg);
+      desc = `Thẻ cào ${nm} ${(amount/1000).toFixed(0)}K`;
+    }
+
+    if (amount < 50000) { showToast('Số tiền tối thiểu 50.000đ!', true); return; }
+    if (amount > balance) { showToast('Số dư không đủ!', true); return; }
+
+    const btn = document.querySelector('#form-' + method + ' .btn-submit');
+    btn.disabled = true;
+    btn.textContent = '⏳ Đang xử lý...';
+
+    userData.balance = balance - amount;
+    if (!userData.history) userData.history = [];
+    userData.history.unshift({
+      type: 'withdraw',
+      desc: desc,
+      amount: -amount,
+      time: new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }),
+      status: 'pending'
+    });
+    if (userData.history.length > 50) userData.history = userData.history.slice(0, 50);
+
+    binData.users[currentUser.id] = userData;
+    await saveBin(binData);
+
+    document.getElementById('balance').innerHTML = userData.balance.toLocaleString('vi') + ' <span class="unit purple">đ</span>';
+    btn.disabled = false;
+    btn.textContent = 'Gửi yêu cầu rút tiền';
+    showToast('✅ Yêu cầu đã gửi thành công!');
+  }
+
+  async function init() {
+    const savedToken = localStorage.getItem('discord_token');
+    if (!savedToken) { window.location.href = '/'; return; }
+
+    try {
+      const res = await fetch('https://discord.com/api/users/@me', {
+        headers: { Authorization: 'Bearer ' + savedToken }
+      });
+      const user = await res.json();
+      if (!user.id) { localStorage.removeItem('discord_token'); window.location.href = '/'; return; }
+
+      currentUser = user;
+      const avatar = user.avatar
+        ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`
+        : `https://cdn.discordapp.com/embed/avatars/0.png`;
+
+      document.getElementById('header-avatar').src = avatar;
+      document.getElementById('header-avatar').style.display = 'block';
+      document.getElementById('header-name').textContent = user.username;
+      document.getElementById('sidebar-avatar').src = avatar;
+      document.getElementById('sidebar-name').textContent = user.username;
+
+      binData = await getBin();
+      if (!binData.users) binData.users = {};
+      userData = binData.users[user.id] || {};
+
+      document.getElementById('balance').innerHTML = (userData.balance || 0).toLocaleString('vi') + ' <span class="unit purple">đ</span>';
+      document.getElementById('loading').style.display = 'none';
+
+    } catch(e) {
+      localStorage.removeItem('discord_token');
+      window.location.href = '/';
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    init();
+    document.getElementById('menu-btn').addEventListener('click', function() {
+      document.getElementById('sidebar').classList.add('show');
+      document.getElementById('overlay').classList.add('show');
+    });
+    document.getElementById('overlay').addEventListener('click', function() {
+      document.getElementById('sidebar').classList.remove('show');
+      document.getElementById('overlay').classList.remove('show');
+    });
+    document.getElementById('btn-logout').addEventListener('click', function() {
+      localStorage.removeItem('discord_token');
+      window.location.href = '/';
+    });
+  });
+</script>
+</body>
+                                          </html>
