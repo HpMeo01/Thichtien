@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ThíchTiền - Nhiệm Vụ</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Be Vietnam Pro', sans-serif; background: #0a0a14; color: #fff; min-height: 100vh; padding-bottom: 30px; }
+  .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 200; }
+  .sidebar-overlay.show { display: block; }
+  .sidebar { position: fixed; top: 0; left: -260px; width: 260px; height: 100%; background: #13132a; border-right: 1px solid #222244; z-index: 201; transition: left .25s ease; }
+  .sidebar.show { left: 0; }
+  .sidebar-header { padding: 24px 20px 16px; border-bottom: 1px solid #222244; font-size: 1.1rem; font-weight: 800; }
+  .sidebar-header span { color: #a78fff; }
+  .sidebar-user { display: flex; align-items: center; gap: 10px; padding: 14px 20px; border-bottom: 1px solid #222244; }
+  .sidebar-user img { width: 38px; height: 38px; border-radius: 50%; border: 2px solid #6c47ff; }
+  .sidebar-user .uname { font-size: .88rem; font-weight: 700; }
+  .sidebar-user .utag { font-size: .72rem; color: #6666aa; }
+  .sidebar-menu { padding: 12px 0; }
+  .sidebar-item { display: flex; align-items: center; gap: 14px; padding: 15px 20px; font-size: .95rem; font-weight: 600; color: #9999bb; cursor: pointer; transition: all .2s; }
+  .sidebar-item:hover { background: #1e1e3a; color: #fff; }
+  .sidebar-item.active { color: #a78fff; background: rgba(108,71,255,.1); }
+  .sidebar-item .s-icon { font-size: 1.2rem; width: 24px; text-align: center; }
+  .sidebar-logout { margin: 8px 16px; padding: 11px; background: rgba(255,50,50,.1); border: 1px solid rgba(255,50,50,.2); border-radius: 10px; color: #ff6666; font-size: .85rem; font-weight: 700; cursor: pointer; text-align: center; }
+  .sidebar-logout:hover { background: rgba(255,50,50,.2); }
+  .header { padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; background: #0a0a14; border-bottom: 1px solid #111128; z-index: 100; }
+  .logo-text { font-size: 1.1rem; font-weight: 800; }
+  .logo-text span { color: #a78fff; }
+  .icon-btn { width: 40px; height: 40px; background: #1a1a2e; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; cursor: pointer; user-select: none; }
+  .user-info { display: flex; align-items: center; gap: 8px; }
+  .user-info img { width: 34px; height: 34px; border-radius: 50%; border: 2px solid #6c47ff; display: none; }
+  .user-info span { font-size: .82rem; font-weight: 700; color: #a78fff; }
+  .wrap { padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .stat-card { background: #13132a; border: 1px solid #222244; border-radius: 16px; padding: 18px 16px; position: relative; overflow: hidden; }
+  .stat-card.full { grid-column: span 2; }
+  .stat-card .label { font-size: .67rem; font-weight: 700; color: #6666aa; letter-spacing: .5px; text-transform: uppercase; margin-bottom: 10px; }
+  .stat-card .value { font-size: 1.7rem; font-weight: 800; line-height: 1.1; }
+  .stat-card .unit { font-size: 1rem; font-weight: 700; }
+  .stat-card .sub { font-size: .73rem; color: #6666aa; margin-top: 6px; }
+  .stat-card .card-icon { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); font-size: 1.6rem; opacity: .5; }
+  .purple { color: #a78fff; } .green { color: #4ade80; } .yellow { color: #fbbf24; }
+  .section-title { font-size: 1rem; font-weight: 700; }
+  .tasks { display: flex; flex-direction: column; gap: 14px; }
+  .task-card { background: #13132a; border: 1px solid #222244; border-radius: 16px; padding: 18px; position: relative; }
+  .task-card.hot { border-color: #6c47ff; }
+  .hot-badge { position: absolute; top: 14px; right: 14px; background: #6c47ff; color: #fff; font-size: .68rem; font-weight: 700; padding: 4px 10px; border-radius: 20px; }
+  .task-header { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .task-logo { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: .9rem; font-weight: 800; flex-shrink: 0; }
+  .logo-green { background: #0d3020; color: #4ade80; }
+  .logo-blue { background: #0d1f3d; color: #60a5fa; }
+  .logo-orange { background: #3d1a00; color: #fb923c; }
+  .task-name { font-size: 1rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .reward-tag { background: #14532d; color: #4ade80; font-size: .68rem; font-weight: 700; padding: 3px 9px; border-radius: 20px; }
+  .task-desc { font-size: .82rem; color: #7777aa; line-height: 1.55; margin-bottom: 14px; }
+  .task-desc b { color: #ccc; }
+  .btn-do { width: 100%; background: transparent; border: 1.5px solid #6c47ff; border-radius: 50px; padding: 12px; color: #a78fff; font-size: .9rem; font-weight: 700; font-family: inherit; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all .2s; margin-bottom: 10px; }
+  .btn-do:hover:not(:disabled) { background: rgba(108,71,255,.15); }
+  .btn-do:disabled { opacity: .5; cursor: not-allowed; }
+  .progress-row { display: flex; align-items: center; gap: 10px; }
+  .progress-bar { flex: 1; height: 4px; background: #222244; border-radius: 4px; overflow: hidden; }
+  .progress-fill { height: 100%; background: #6c47ff; border-radius: 4px; transition: width .4s; }
+  .progress-text { font-size: .73rem; color: #6666aa; white-space: nowrap; }
+  .loading-screen { position: fixed; inset: 0; background: #0a0a14; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 999; gap: 16px; }
+  .loading-screen .logo { font-size: 1.5rem; font-weight: 800; }
+  .loading-screen .logo span { color: #a78fff; }
+  .spinner { width: 36px; height: 36px; border: 3px solid #222244; border-top-color: #6c47ff; border-radius: 50%; animation: spin .7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div class="loading-screen" id="loading">
+  <div class="logo">Thích<span>Tiền</span></div>
+  <div class="spinner"></div>
+  <div style="font-size:.8rem;color:#6666aa">Đang tải...</div>
+</div>
+
+<div class="sidebar-overlay" id="overlay"></div>
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-header">Thích<span>Tiền</span></div>
+  <div class="sidebar-user">
+    <img id="sidebar-avatar" src="" />
+    <div>
+      <div class="uname" id="sidebar-name">...</div>
+      <div class="utag">Thành viên</div>
+    </div>
+  </div>
+  <div class="sidebar-menu">
+    <div class="sidebar-item" onclick="location.href='/app'"><span class="s-icon">🏠</span> Dashboard</div>
+    <div class="sidebar-item active" onclick="location.href='/nhiemvu'"><span class="s-icon">⚡</span> Nhiệm Vụ</div>
+    <div class="sidebar-item" onclick="location.href='/ruttien'"><span class="s-icon">💸</span> Rút Tiền</div>
+    <div class="sidebar-item" onclick="location.href='/lichsu'"><span class="s-icon">📋</span> Lịch Sử</div>
+    <div class="sidebar-item" onclick="location.href='/invite'"><span class="s-icon">👥</span> Mời Bạn Bè</div>
+  </div>
+  <div class="sidebar-logout" id="btn-logout">🚪 Đăng xuất</div>
+</div>
+
+<div class="header">
+  <div class="icon-btn" id="menu-btn">☰</div>
+  <div class="logo-text">Thích<span>Tiền</span></div>
+  <div class="user-info">
+    <img id="header-avatar" />
+    <span id="header-name"></span>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="stats">
+    <div class="stat-card full">
+      <div class="label">Số dư hiện tại</div>
+      <div class="value purple" id="balance">0 <span class="unit purple">đ</span></div>
+      <div class="sub">Chờ duyệt: 0đ</div>
+      <div class="card-icon">💜</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Tổng link đã vượt</div>
+      <div class="value green" id="total-links">0 <span class="unit green">Link</span></div>
+      <div class="card-icon">🔗</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Hôm nay đã vượt</div>
+      <div class="value yellow" id="today-links">0 <span class="unit yellow">Link</span></div>
+      <div class="card-icon">⚡</div>
+    </div>
+  </div>
+
+  <div class="section-title">⚡ Nhiệm vụ hôm nay</div>
+  <div class="tasks">
+    <div class="task-card hot">
+      <div class="hot-badge">⭐ HOT</div>
+      <div class="task-header">
+        <div class="task-logo logo-green">L4M</div>
+        <div><div class="task-name">Link4M <span class="reward-tag">+300đ</span></div></div>
+      </div>
+      <div class="task-desc">Vượt link rút gọn <b>Link4M</b> để nhận thưởng ngay. Tối đa 2 lượt/ngày.</div>
+      <button class="btn-do" id="btn-l4m">▶ Làm ngay</button>
+      <div class="progress-row">
+        <div class="progress-bar"><div class="progress-fill" id="fill-l4m" style="width:0%"></div></div>
+        <div class="progress-text" id="prog-l4m">0/2 lượt</div>
+      </div>
+    </div>
+
+    <div class="task-card">
+      <div class="task-header">
+        <div class="task-logo logo-blue">T68</div>
+        <div><div class="task-name">Traffic68 <span class="reward-tag">+200đ</span></div></div>
+      </div>
+      <div class="task-desc">Vượt link rút gọn <b>Traffic68</b> để nhận thưởng ngay. Tối đa 4 lượt/ngày.</div>
+      <button class="btn-do" id="btn-t68">▶ Làm ngay</button>
+      <div class="progress-row">
+        <div class="progress-bar"><div class="progress-fill" id="fill-t68" style="width:0%"></div></div>
+        <div class="progress-text" id="prog-t68">0/4 lượt</div>
+      </div>
+    </div>
+
+    <div class="task-card">
+      <div class="task-header">
+        <div class="task-logo logo-orange">TVN</div>
+        <div><div class="task-name">TrafficVN <span class="reward-tag">+150đ</span></div></div>
+      </div>
+      <div class="task-desc">Vượt link rút gọn <b>TrafficVN</b> để nhận thưởng ngay. Tối đa 3 lượt/ngày.</div>
+      <button class="btn-do" id="btn-tvn">▶ Làm ngay</button>
+      <div class="progress-row">
+        <div class="progress-bar"><div class="progress-fill" id="fill-tvn" style="width:0%"></div></div>
+        <div class="progress-text" id="prog-tvn">0/3 lượt</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const BIN_ID = '6a3369d5f5f4af5e290621bc';
+  const API_KEY = '$2a$10$YVH3jNV8udYSofwkiyZlKeu6hhKSJtlzT0NgddUf49roykSuQPhKq';
+  const BASE_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
+
+  const TASKS = [
+    { id: 'btn-l4m', max: 2, reward: 300 },
+    { id: 'btn-t68', max: 4, reward: 200 },
+    { id: 'btn-tvn', max: 3, reward: 150 },
+  ];
+
+  let currentUser = null;
+  let userData = {};
+  let binData = {};
+
+  async function getBin() {
+    const r = await fetch(BASE_URL + '/latest', { headers: { 'X-Access-Key': API_KEY } });
+    const d = await r.json();
+    return d.record;
+  }
+
+  async function saveBin(data) {
+    await fetch(BASE_URL, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'X-Access-Key': API_KEY },
+      body: JSON.stringify(data)
+    });
+  }
+
+  function getNowVN() {
+    const nowVN = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' }));
+    return `${nowVN.getFullYear()}-${nowVN.getMonth()}-${nowVN.getDate()}`;
+  }
+
+  function restoreUI() {
+    const todayStr = getNowVN();
+    const taskState = userData.lastDate === todayStr ? (userData.taskState || {}) : {};
+
+    TASKS.forEach(function(t) {
+      const done = taskState[t.id] || 0;
+      const btn = document.getElementById(t.id);
+      document.getElementById('fill-' + t.id.replace('btn-', '')).style.width = (done / t.max * 100) + '%';
+      document.getElementById('prog-' + t.id.replace('btn-', '')).textContent = done + '/' + t.max + ' lượt';
+      if (done >= t.max) {
+        btn.innerHTML = '✅ Hoàn thành';
+        btn.style.borderColor = '#4ade80';
+        btn.style.color = '#4ade80';
+        btn.disabled = true;
+      }
+    });
+
+    const balance = userData.balance || 0;
+    const totalLinks = userData.totalLinks || 0;
+    const todayLinks = userData.lastDate === todayStr ? (userData.todayLinks || 0) : 0;
+    document.getElementById('balance').innerHTML = balance.toLocaleString('vi') + ' <span class="unit purple">đ</span>';
+    document.getElementById('total-links').innerHTML = totalLinks + ' <span class="unit green">Link</span>';
+    document.getElementById('today-links').innerHTML = todayLinks + ' <span class="unit yellow">Link</span>';
+  }
+
+  async function doTask(btn, max, reward) {
+    const todayStr = getNowVN();
+    if (userData.lastDate !== todayStr) {
+      userData.taskState = {};
+      userData.todayLinks = 0;
+      userData.lastDate = todayStr;
+    }
+    if (!userData.taskState) userData.taskState = {};
+
+    const name = btn.id;
+    const done = userData.taskState[name] || 0;
+    if (done >= max) return;
+
+    btn.disabled = true;
+    btn.innerHTML = '⏳ Đang xử lý...';
+
+    userData.taskState[name] = done + 1;
+    userData.balance = (userData.balance || 0) + reward;
+    userData.totalLinks = (userData.totalLinks || 0) + 1;
+    userData.todayLinks = (userData.todayLinks || 0) + 1;
+    userData.totalEarned = (userData.totalEarned || 0) + reward;
+
+    // Lưu lịch sử
+    if (!userData.history) userData.history = [];
+    userData.history.unshift({
+      type: 'earn',
+      desc: `Vượt link ${name.replace('btn-', '').toUpperCase()}`,
+      amount: reward,
+      time: new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })
+    });
+    if (userData.history.length > 50) userData.history = userData.history.slice(0, 50);
+
+    binData.users[currentUser.id] = userData;
+    await saveBin(binData);
+    restoreUI();
+
+    const newDone = userData.taskState[name];
+    if (newDone >= max) {
+      btn.innerHTML = '✅ Hoàn thành';
+      btn.style.borderColor = '#4ade80';
+      btn.style.color = '#4ade80';
+    } else {
+      btn.disabled = false;
+      btn.innerHTML = '▶ Làm ngay';
+    }
+  }
+
+  async function init() {
+    const savedToken = localStorage.getItem('discord_token');
+    if (!savedToken) { window.location.href = '/'; return; }
+
+    try {
+      const res = await fetch('https://discord.com/api/users/@me', {
+        headers: { Authorization: 'Bearer ' + savedToken }
+      });
+      const user = await res.json();
+      if (!user.id) { localStorage.removeItem('discord_token'); window.location.href = '/'; return; }
+
+      currentUser = user;
+      const avatar = user.avatar
+        ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`
+        : `https://cdn.discordapp.com/embed/avatars/0.png`;
+
+      document.getElementById('header-avatar').src = avatar;
+      document.getElementById('header-avatar').style.display = 'block';
+      document.getElementById('header-name').textContent = user.username;
+      document.getElementById('sidebar-avatar').src = avatar;
+      document.getElementById('sidebar-name').textContent = user.username;
+
+      binData = await getBin();
+      if (!binData.users) binData.users = {};
+      userData = binData.users[user.id] || {};
+
+      restoreUI();
+      document.getElementById('loading').style.display = 'none';
+
+      TASKS.forEach(function(t) {
+        document.getElementById(t.id).addEventListener('click', function() {
+          doTask(this, t.max, t.reward);
+        });
+      });
+
+    } catch(e) {
+      localStorage.removeItem('discord_token');
+      window.location.href = '/';
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    init();
+    document.getElementById('menu-btn').addEventListener('click', function() {
+      document.getElementById('sidebar').classList.add('show');
+      document.getElementById('overlay').classList.add('show');
+    });
+    document.getElementById('overlay').addEventListener('click', function() {
+      document.getElementById('sidebar').classList.remove('show');
+      document.getElementById('overlay').classList.remove('show');
+    });
+    document.getElementById('btn-logout').addEventListener('click', function() {
+      localStorage.removeItem('discord_token');
+      window.location.href = '/';
+    });
+  });
+</script>
+</body>
+                                                 </html>
