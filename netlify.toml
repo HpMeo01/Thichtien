@@ -1,0 +1,24 @@
+[[redirects]]
+  from = "/app"
+  to = "/app.html"
+  status = 200
+
+[[redirects]]
+  from = "/nhiemvu"
+  to = "/nhiemvu.html"
+  status = 200
+
+[[redirects]]
+  from = "/ruttien"
+  to = "/ruttien.html"
+  status = 200
+
+[[redirects]]
+  from = "/lichsu"
+  to = "/lichsu.html"
+  status = 200
+
+[[redirects]]
+  from = "/invite"
+  to = "/invite.html"
+  status = 200
