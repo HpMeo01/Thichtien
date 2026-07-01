@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IUMoney - Mời Bạn Bè</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Be Vietnam Pro', sans-serif; background: #0a0a14; color: #fff; min-height: 100vh; padding-bottom: 30px; }
+  .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 200; }
+  .sidebar-overlay.show { display: block; }
+  .sidebar { position: fixed; top: 0; left: -260px; width: 260px; height: 100%; background: #13132a; border-right: 1px solid #222244; z-index: 201; transition: left .25s ease; }
+  .sidebar.show { left: 0; }
+  .sidebar-header { padding: 24px 20px 16px; border-bottom: 1px solid #222244; font-size: 1.1rem; font-weight: 800; }
+  .sidebar-header span { color: #a78fff; }
+  .sidebar-user { display: flex; align-items: center; gap: 10px; padding: 14px 20px; border-bottom: 1px solid #222244; }
+  .sidebar-user img { width: 38px; height: 38px; border-radius: 50%; border: 2px solid #6c47ff; }
+  .sidebar-user .uname { font-size: .88rem; font-weight: 700; }
+  .sidebar-user .utag { font-size: .72rem; color: #6666aa; }
+  .sidebar-menu { padding: 12px 0; }
+  .sidebar-item { display: flex; align-items: center; gap: 14px; padding: 15px 20px; font-size: .95rem; font-weight: 600; color: #9999bb; cursor: pointer; transition: all .2s; }
+  .sidebar-item:hover { background: #1e1e3a; color: #fff; }
+  .sidebar-item.active { color: #a78fff; background: rgba(108,71,255,.1); }
+  .sidebar-item .s-icon { font-size: 1.2rem; width: 24px; text-align: center; }
+  .sidebar-logout { margin: 8px 16px; padding: 11px; background: rgba(255,50,50,.1); border: 1px solid rgba(255,50,50,.2); border-radius: 10px; color: #ff6666; font-size: .85rem; font-weight: 700; cursor: pointer; text-align: center; }
+  .sidebar-logout:hover { background: rgba(255,50,50,.2); }
+  .header { padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; background: #0a0a14; border-bottom: 1px solid #111128; z-index: 100; }
+  .logo-text { font-size: 1.1rem; font-weight: 800; }
+  .logo-text span { color: #a78fff; }
+  .icon-btn { width: 40px; height: 40px; background: #1a1a2e; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; cursor: pointer; }
+  .user-info { display: flex; align-items: center; gap: 8px; }
+  .user-info img { width: 34px; height: 34px; border-radius: 50%; border: 2px solid #6c47ff; display: none; }
+  .user-info span { font-size: .82rem; font-weight: 700; color: #a78fff; }
+  .wrap { padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+  .banner { background: linear-gradient(135deg, #0d1a0d, #0d1230); border: 1px solid #1a3a1a; border-radius: 16px; padding: 24px 20px; text-align: center; }
+  .banner h2 { font-size: 1.2rem; font-weight: 800; margin-bottom: 8px; }
+  .banner p { font-size: .83rem; color: #9999bb; line-height: 1.65; }
+  .banner p b { color: #4ade80; }
+  .stat-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .mini-card { background: #13132a; border: 1px solid #222244; border-radius: 14px; padding: 16px; }
+  .mini-card .ml { font-size: .67rem; font-weight: 700; color: #6666aa; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
+  .mini-card .mv { font-size: 1.3rem; font-weight: 800; }
+  .ref-card { background: #13132a; border: 1px solid #222244; border-radius: 16px; padding: 20px; }
+  .ref-card h3 { font-size: .95rem; font-weight: 700; margin-bottom: 12px; }
+  .ref-link-box { background: #0a0a14; border: 1px solid #222244; border-radius: 10px; padding: 12px 14px; font-size: .8rem; color: #a78fff; cursor: pointer; display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .ref-link-box span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .btn-share { width: 100%; background: #5865F2; border: none; border-radius: 10px; padding: 12px; color: #fff; font-size: .9rem; font-weight: 700; font-family: inherit; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .btn-share:hover { opacity: .85; }
+  .how-card { background: #13132a; border: 1px solid #222244; border-radius: 16px; padding: 20px; }
+  .how-card h3 { font-size: .95rem; font-weight: 700; margin-bottom: 14px; }
+  .how-step { display: flex; gap: 12px; margin-bottom: 14px; align-items: flex-start; }
+  .how-step:last-child { margin-bottom: 0; }
+  .how-num { width: 28px; height: 28px; flex-shrink: 0; background: rgba(108,71,255,.2); border: 1px solid rgba(108,71,255,.4); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .75rem; font-weight: 800; color: #a78fff; }
+  .how-text h4 { font-size: .85rem; font-weight: 700; margin-bottom: 3px; }
+  .how-text p { font-size: .75rem; color: #7777aa; line-height: 1.5; }
+  .how-text p b { color: #4ade80; }
+  .empty-state { text-align: center; padding: 24px; color: #555577; font-size: .83rem; }
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #22c55e; color: #fff; padding: 12px 24px; border-radius: 12px; font-size: .88rem; font-weight: 700; z-index: 999; display: none; }
+  .loading-screen { position: fixed; inset: 0; background: #0a0a14; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 999; gap: 16px; }
+  .loading-screen .logo { font-size: 1.5rem; font-weight: 800; }
+  .loading-screen .logo span { color: #a78fff; }
+  .spinner { width: 36px; height: 36px; border: 3px solid #222244; border-top-color: #6c47ff; border-radius: 50%; animation: spin .7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .banned-screen { position: fixed; inset: 0; background: #0a0a14; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 1000; gap: 16px; text-align: center; padding: 20px; }
+  .banned-screen .bi { font-size: 3.5rem; }
+  .banned-screen h2 { font-size: 1.2rem; font-weight: 800; color: #ff6666; }
+  .banned-screen p { font-size: .85rem; color: #9999bb; max-width: 300px; }
+</style>
+</head>
+<body>
+
+<div class="loading-screen" id="loading">
+  <div class="logo">IU<span>Money</span></div>
+  <div class="spinner"></div>
+  <div style="font-size:.8rem;color:#6666aa">Đang tải...</div>
+</div>
+
+<div class="banned-screen" id="banned-screen">
+  <div class="bi">🔒</div>
+  <h2>Tài khoản đã bị khóa</h2>
+  <p>Liên hệ admin nếu bạn cho rằng đây là nhầm lẫn.</p>
+</div>
+
+<div class="toast" id="toast">✅ Đã sao chép!</div>
+
+<div class="sidebar-overlay" id="overlay"></div>
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-header">IU<span>Money</span></div>
+  <div class="sidebar-user">
+    <img id="sidebar-avatar" src="" />
+    <div>
+      <div class="uname" id="sidebar-name">...</div>
+      <div class="utag">Thành viên</div>
+    </div>
+  </div>
+  <div class="sidebar-menu">
+    <div class="sidebar-item" onclick="location.href='/app'"><span class="s-icon">🏠</span> Dashboard</div>
+    <div class="sidebar-item" onclick="location.href='/nhiemvu'"><span class="s-icon">⚡</span> Nhiệm Vụ</div>
+    <div class="sidebar-item" onclick="location.href='/ruttien'"><span class="s-icon">💸</span> Rút Tiền</div>
+    <div class="sidebar-item" onclick="location.href='/lichsu'"><span class="s-icon">📋</span> Lịch Sử</div>
+    <div class="sidebar-item active" onclick="location.href='/invite'"><span class="s-icon">👥</span> Mời Bạn Bè</div>
+  </div>
+  <div class="sidebar-logout" id="btn-logout">🚪 Đăng xuất</div>
+</div>
+
+<div class="header">
+  <div class="icon-btn" id="menu-btn">☰</div>
+  <div class="logo-text">IU<span>Money</span></div>
+  <div class="user-info">
+    <img id="header-avatar" />
+    <span id="header-name"></span>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="banner">
+    <h2>🤝 Mời bạn bè — nhận tiền mãi mãi</h2>
+    <p>Bạn bè vượt link kiếm được bao nhiêu,<br>bạn nhận <b>5% hoa hồng vĩnh viễn</b> tự động.</p>
+  </div>
+
+  <div class="stat-row">
+    <div class="mini-card">
+      <div class="ml">Đã giới thiệu</div>
+      <div class="mv" style="color:#a78fff" id="ref-count">0 người</div>
+    </div>
+    <div class="mini-card">
+      <div class="ml">Hoa hồng nhận</div>
+      <div class="mv" style="color:#4ade80" id="ref-earned">0đ</div>
+    </div>
+  </div>
+
+  <div class="ref-card">
+    <h3>🔗 Link giới thiệu của bạn</h3>
+    <div class="ref-link-box" id="ref-copy">
+      <span id="ref-url">https://iumoney.netlify.app?ref=...</span>
+      <span>📋</span>
+    </div>
+    <button class="btn-share" id="btn-share">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/></svg>
+      Chia sẻ link
+    </button>
+  </div>
+
+  <div class="how-card">
+    <h3>💡 Cách hoạt động</h3>
+    <div class="how-step">
+      <div class="how-num">1</div>
+      <div class="how-text"><h4>Chia sẻ link của bạn</h4><p>Gửi link cho bạn bè qua Zalo, Facebook, Discord...</p></div>
+    </div>
+    <div class="how-step">
+      <div class="how-num">2</div>
+      <div class="how-text"><h4>Bạn bè đăng ký và vượt link</h4><p>Họ đăng nhập Discord qua link của bạn và bắt đầu làm nhiệm vụ.</p></div>
+    </div>
+    <div class="how-step">
+      <div class="how-num">3</div>
+      <div class="how-text"><h4>Bạn nhận <b>5% hoa hồng vĩnh viễn</b></h4><p>Mỗi lần họ vượt link nhận thưởng, bạn tự động nhận thêm 5% — mãi mãi.</p></div>
+    </div>
+  </div>
+
+  <div style="font-size:.9rem;font-weight:700">👥 Danh sách đã giới thiệu</div>
+  <div class="ref-list" id="ref-list">
+    <div class="empty-state">Chưa có ai đăng ký qua link của bạn</div>
+  </div>
+</div>
+
+<script>
+  const BOT_API = 'https://thichtien-production.up.railway.app';
+  let currentUser = null;
+  let refUrl = '';
+
+  function showToast() {
+    const t = document.getElementById('toast');
+    t.style.display = 'block';
+    setTimeout(() => t.style.display = 'none', 2000);
+  }
+
+  async function init() {
+    const savedToken = localStorage.getItem('discord_token');
+    if (!savedToken) { window.location.href = '/'; return; }
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const refId = urlParams.get('ref');
+    if (refId) localStorage.setItem('ref_by', refId);
+
+    try {
+      const res = await fetch('https://discord.com/api/users/@me', {
+        headers: { Authorization: 'Bearer ' + savedToken }
+      });
+      const user = await res.json();
+      if (!user.id) { localStorage.removeItem('discord_token'); window.location.href = '/'; return; }
+
+      currentUser = user;
+      const avatar = user.avatar
+        ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`
+        : `https://cdn.discordapp.com/embed/avatars/0.png`;
+
+      document.getElementById('header-avatar').src = avatar;
+      document.getElementById('header-avatar').style.display = 'block';
+      document.getElementById('header-name').textContent = user.username;
+      document.getElementById('sidebar-avatar').src = avatar;
+      document.getElementById('sidebar-name').textContent = user.username;
+
+      refUrl = `https://iumoney.netlify.app?ref=${user.id}`;
+      document.getElementById('ref-url').textContent = refUrl;
+
+      const dataRes = await fetch(`${BOT_API}/api/user/${user.id}`);
+      const userData = await dataRes.json();
+
+      if (userData.banned) {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('banned-screen').style.display = 'flex';
+        return;
+      }
+
+      const refs = userData.refs || [];
+      const refEarned = userData.refEarned || 0;
+      document.getElementById('ref-count').textContent = refs.length + ' người';
+      document.getElementById('ref-earned').textContent = refEarned.toLocaleString('vi') + 'đ';
+
+      document.getElementById('loading').style.display = 'none';
+
+    } catch(e) {
+      localStorage.removeItem('discord_token');
+      window.location.href = '/';
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    init();
+    document.getElementById('ref-copy').addEventListener('click', function() {
+      navigator.clipboard.writeText(refUrl);
+      const icon = this.querySelectorAll('span')[1];
+      icon.textContent = '✅';
+      setTimeout(() => icon.textContent = '📋', 2000);
+      showToast();
+    });
+    document.getElementById('btn-share').addEventListener('click', function() {
+      if (navigator.share) {
+        navigator.share({ title: 'IUMoney', text: 'Kiếm tiền mỗi ngày chỉ với vài click!', url: refUrl });
+      } else {
+        navigator.clipboard.writeText(refUrl);
+        showToast();
+      }
+    });
+    document.getElementById('menu-btn').addEventListener('click', function() {
+      document.getElementById('sidebar').classList.add('show');
+      document.getElementById('overlay').classList.add('show');
+    });
+    document.getElementById('overlay').addEventListener('click', function() {
+      document.getElementById('sidebar').classList.remove('show');
+      document.getElementById('overlay').classList.remove('show');
+    });
+    document.getElementById('btn-logout').addEventListener('click', function() {
+      localStorage.removeItem('discord_token');
+      window.location.href = '/';
+    });
+  });
+
+  document.addEventListener('contextmenu', e => e.preventDefault());
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'F12') e.preventDefault();
+    if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) e.preventDefault();
+    if (e.ctrlKey && e.key === 'U') e.preventDefault();
+  });
+</script>
+
+<!-- MUSIC PLAYER -->
+<div id="music-player" style="position:fixed;bottom:16px;right:16px;background:#13132a;border:1px solid #222244;border-radius:16px;padding:12px 14px;z-index:500;width:230px;box-shadow:0 8px 24px rgba(0,0,0,.4);">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+    <div style="width:36px;height:36px;background:linear-gradient(135deg,#6c47ff,#a78fff);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;">🎵</div>
+    <div style="flex:1;overflow:hidden;">
+      <div id="music-name" style="font-size:.78rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff;">Music 1</div>
+      <div style="font-size:.65rem;color:#6666aa;">IUMoney Radio</div>
+    </div>
+    <button onclick="closeMusicPlayer()" style="background:none;border:none;color:#555577;font-size:1rem;cursor:pointer;padding:0 2px;">✕</button>
+  </div>
+  <input type="range" id="music-seek" value="0" min="0" max="100" style="width:100%;height:4px;accent-color:#6c47ff;margin-bottom:8px;cursor:pointer;">
+  <div style="display:flex;align-items:center;justify-content:center;gap:14px;">
+    <button onclick="prevMusic()" style="background:none;border:none;color:#a78fff;font-size:1.1rem;cursor:pointer;">⏮</button>
+    <button onclick="toggleMusic()" id="music-play-btn" style="background:#6c47ff;border:none;color:#fff;font-size:1rem;width:34px;height:34px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;">▶</button>
+    <button onclick="nextMusic()" style="background:none;border:none;color:#a78fff;font-size:1.1rem;cursor:pointer;">⏭</button>
+  </div>
+</div>
+
+<div id="music-bubble" onclick="openMusicPlayer()" style="display:none;position:fixed;bottom:16px;right:16px;width:48px;height:48px;background:linear-gradient(135deg,#6c47ff,#a78fff);border-radius:50%;z-index:500;align-items:center;justify-content:center;font-size:1.3rem;cursor:pointer;box-shadow:0 8px 24px rgba(108,71,255,.4);">🎵</div>
+
+<audio id="audio-player"></audio>
+
+<script>
+  const playlist = [
+    { name: 'Music 1', src: '/music/music1.mp3' },
+    { name: 'Music 2', src: '/music/music2.mp3' },
+    { name: 'Music 3', src: '/music/music3.mp3' },
+    { name: 'Music 4', src: '/music/music4.mp3' },
+    { name: 'Music 5', src: '/music/music5.mp3' },
+  ];
+  let currentTrack = 0;
+  let isPlaying = false;
+  const audio = document.getElementById('audio-player');
+
+  function loadTrack(i, autoplay) {
+    currentTrack = i;
+    audio.src = playlist[i].src;
+    document.getElementById('music-name').textContent = playlist[i].name;
+    if (autoplay) { audio.play(); isPlaying = true; document.getElementById('music-play-btn').textContent = '⏸'; }
+  }
+  function toggleMusic() {
+    if (isPlaying) { audio.pause(); isPlaying = false; document.getElementById('music-play-btn').textContent = '▶'; }
+    else { audio.play(); isPlaying = true; document.getElementById('music-play-btn').textContent = '⏸'; }
+  }
+  function nextMusic() { loadTrack((currentTrack + 1) % playlist.length, true); }
+  function prevMusic() { loadTrack((currentTrack - 1 + playlist.length) % playlist.length, true); }
+  function closeMusicPlayer() {
+    document.getElementById('music-player').style.display = 'none';
+    document.getElementById('music-bubble').style.display = 'flex';
+  }
+  function openMusicPlayer() {
+    document.getElementById('music-player').style.display = 'block';
+    document.getElementById('music-bubble').style.display = 'none';
+  }
+  audio.addEventListener('ended', nextMusic);
+  audio.addEventListener('timeupdate', function() {
+    if (audio.duration) document.getElementById('music-seek').value = (audio.currentTime / audio.duration) * 100;
+  });
+  document.getElementById('music-seek').addEventListener('input', function() {
+    if (audio.duration) audio.currentTime = (this.value / 100) * audio.duration;
+  });
+  loadTrack(0, false);
+</script>
+
+</body>
+  </html>
