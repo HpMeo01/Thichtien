@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IUMoney - Rút Tiền</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Be Vietnam Pro', sans-serif; background: #0a0a14; color: #fff; min-height: 100vh; padding-bottom: 30px; }
+  .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 200; }
+  .sidebar-overlay.show { display: block; }
+  .sidebar { position: fixed; top: 0; left: -260px; width: 260px; height: 100%; background: #13132a; border-right: 1px solid #222244; z-index: 201; transition: left .25s ease; }
+  .sidebar.show { left: 0; }
+  .sidebar-header { padding: 24px 20px 16px; border-bottom: 1px solid #222244; font-size: 1.1rem; font-weight: 800; }
+  .sidebar-header span { color: #a78fff; }
+  .sidebar-user { display: flex; align-items: center; gap: 10px; padding: 14px 20px; border-bottom: 1px solid #222244; }
+  .sidebar-user img { width: 38px; height: 38px; border-radius: 50%; border: 2px solid #6c47ff; }
+  .sidebar-user .uname { font-size: .88rem; font-weight: 700; }
+  .sidebar-user .utag { font-size: .72rem; color: #6666aa; }
+  .sidebar-menu { padding: 12px 0; }
+  .sidebar-item { display: flex; align-items: center; gap: 14px; padding: 15px 20px; font-size: .95rem; font-weight: 600; color: #9999bb; cursor: pointer; transition: all .2s; }
+  .sidebar-item:hover { background: #1e1e3a; color: #fff; }
+  .sidebar-item.active { color: #a78fff; background: rgba(108,71,255,.1); }
+  .sidebar-item .s-icon { font-size: 1.2rem; width: 24px; text-align: center; }
+  .sidebar-logout { margin: 8px 16px; padding: 11px; background: rgba(255,50,50,.1); border: 1px solid rgba(255,50,50,.2); border-radius: 10px; color: #ff6666; font-size: .85rem; font-weight: 700; cursor: pointer; text-align: center; }
+  .sidebar-logout:hover { background: rgba(255,50,50,.2); }
+  .header { padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; background: #0a0a14; border-bottom: 1px solid #111128; z-index: 100; }
+  .logo-text { font-size: 1.1rem; font-weight: 800; }
+  .logo-text span { color: #a78fff; }
+  .icon-btn { width: 40px; height: 40px; background: #1a1a2e; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; cursor: pointer; }
+  .user-info { display: flex; align-items: center; gap: 8px; }
+  .user-info img { width: 34px; height: 34px; border-radius: 50%; border: 2px solid #6c47ff; display: none; }
+  .user-info span { font-size: .82rem; font-weight: 700; color: #a78fff; }
+  .wrap { padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+  .stat-card { background: #13132a; border: 1px solid #222244; border-radius: 16px; padding: 18px 16px; position: relative; overflow: hidden; }
+  .stat-card .label { font-size: .67rem; font-weight: 700; color: #6666aa; letter-spacing: .5px; text-transform: uppercase; margin-bottom: 10px; }
+  .stat-card .value { font-size: 1.7rem; font-weight: 800; }
+  .stat-card .unit { font-size: 1rem; font-weight: 700; }
+  .stat-card .sub { font-size: .73rem; color: #6666aa; margin-top: 6px; }
+  .stat-card .card-icon { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); font-size: 1.6rem; opacity: .5; }
+  .purple { color: #a78fff; }
+  .method-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .method-item { background: #13132a; border: 2px solid #222244; border-radius: 14px; padding: 16px; text-align: center; cursor: pointer; transition: all .2s; }
+  .method-item:hover { border-color: #6c47ff; background: rgba(108,71,255,.08); }
+  .method-item.selected { border-color: #6c47ff; background: rgba(108,71,255,.15); }
+  .method-item .mi { font-size: 1.8rem; margin-bottom: 6px; }
+  .method-item .mn { font-size: .82rem; font-weight: 700; }
+  .form-card { background: #13132a; border: 1px solid #222244; border-radius: 16px; padding: 20px; display: none; }
+  .form-card.show { display: block; }
+  .form-card h3 { font-size: .95rem; font-weight: 700; margin-bottom: 14px; }
+  .form-input { width: 100%; background: #0a0a14; border: 1px solid #222244; border-radius: 10px; padding: 12px 14px; color: #fff; font-size: .9rem; font-family: inherit; outline: none; margin-bottom: 10px; }
+  .form-input:focus { border-color: #6c47ff; }
+  .form-select { width: 100%; background: #0a0a14; border: 1px solid #222244; border-radius: 10px; padding: 12px 14px; color: #fff; font-size: .9rem; font-family: inherit; outline: none; margin-bottom: 10px; appearance: none; }
+  .form-select:focus { border-color: #6c47ff; }
+  .amount-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+  .amount-chip { background: #1a1a2e; border: 1px solid #222244; border-radius: 8px; padding: 7px 14px; font-size: .8rem; font-weight: 700; cursor: pointer; transition: all .2s; }
+  .amount-chip:hover { border-color: #6c47ff; color: #a78fff; }
+  .btn-submit { width: 100%; background: #6c47ff; border: none; border-radius: 10px; padding: 13px; color: #fff; font-size: .9rem; font-weight: 700; font-family: inherit; cursor: pointer; transition: opacity .2s; }
+  .btn-submit:hover { opacity: .85; }
+  .btn-submit:disabled { opacity: .5; cursor: not-allowed; }
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #22c55e; color: #fff; padding: 12px 24px; border-radius: 12px; font-size: .88rem; font-weight: 700; z-index: 999; display: none; }
+  .toast.error { background: #ef4444; }
+  .loading-screen { position: fixed; inset: 0; background: #0a0a14; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 999; gap: 16px; }
+  .loading-screen .logo { font-size: 1.5rem; font-weight: 800; }
+  .loading-screen .logo span { color: #a78fff; }
+  .spinner { width: 36px; height: 36px; border: 3px solid #222244; border-top-color: #6c47ff; border-radius: 50%; animation: spin .7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .banned-screen { position: fixed; inset: 0; background: #0a0a14; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 1000; gap: 16px; text-align: center; padding: 20px; }
+  .banned-screen .bi { font-size: 3.5rem; }
+  .banned-screen h2 { font-size: 1.2rem; font-weight: 800; color: #ff6666; }
+  .banned-screen p { font-size: .85rem; color: #9999bb; max-width: 300px; }
+</style>
+</head>
+<body>
+
+<div class="loading-screen" id="loading">
+  <div class="logo">IU<span>Money</span></div>
+  <div class="spinner"></div>
+  <div style="font-size:.8rem;color:#6666aa">Đang tải...</div>
+</div>
+
+<div class="banned-screen" id="banned-screen">
+  <div class="bi">🔒</div>
+  <h2>Tài khoản đã bị khóa</h2>
+  <p>Liên hệ admin nếu bạn cho rằng đây là nhầm lẫn.</p>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="sidebar-overlay" id="overlay"></div>
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-header">IU<span>Money</span></div>
+  <div class="sidebar-user">
+    <img id="sidebar-avatar" src="" />
+    <div>
+      <div class="uname" id="sidebar-name">...</div>
+      <div class="utag">Thành viên</div>
+    </div>
+  </div>
+  <div class="sidebar-menu">
+    <div class="sidebar-item" onclick="location.href='/app'"><span class="s-icon">🏠</span> Dashboard</div>
+    <div class="sidebar-item" onclick="location.href='/nhiemvu'"><span class="s-icon">⚡</span> Nhiệm Vụ</div>
+    <div class="sidebar-item active" onclick="location.href='/ruttien'"><span class="s-icon">💸</span> Rút Tiền</div>
+    <div class="sidebar-item" onclick="location.href='/lichsu'"><span class="s-icon">📋</span> Lịch Sử</div>
+    <div class="sidebar-item" onclick="location.href='/invite'"><span class="s-icon">👥</span> Mời Bạn Bè</div>
+  </div>
+  <div class="sidebar-logout" id="btn-logout">🚪 Đăng xuất</div>
+</div>
+
+<div class="header">
+  <div class="icon-btn" id="menu-btn">☰</div>
+  <div class="logo-text">IU<span>Money</span></div>
+  <div class="user-info">
+    <img id="header-avatar" />
+    <span id="header-name"></span>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="stat-card">
+    <div class="label">Số dư khả dụng</div>
+    <div class="value purple" id="balance">0 <span class="unit purple">đ</span></div>
+    <div class="sub">Tối thiểu rút: 50.000đ</div>
+    <div class="card-icon">💸</div>
+  </div>
+
+  <div style="font-size:.9rem;font-weight:700">💳 Chọn hình thức rút</div>
+  <div class="method-grid">
+    <div class="method-item" data-method="bank" onclick="selectMethod(this)">
+      <div class="mi">🏦</div>
+      <div class="mn">Ngân hàng</div>
+    </div>
+    <div class="method-item" data-method="sieuvre" onclick="selectMethod(this)">
+      <div class="mi">⚡</div>
+      <div class="mn">Thẻ Siêu Rẻ</div>
+    </div>
+    <div class="method-item" data-method="fast" onclick="selectMethod(this)">
+      <div class="mi">🚀</div>
+      <div class="mn">Gạch thẻ Fast</div>
+    </div>
+    <div class="method-item" data-method="thecao" onclick="selectMethod(this)">
+      <div class="mi">🎴</div>
+      <div class="mn">Thẻ cào</div>
+    </div>
+  </div>
+
+  <div class="form-card" id="form-bank">
+    <h3>🏦 Rút về ngân hàng</h3>
+    <input class="form-input" id="bank-name" placeholder="Tên ngân hàng (VD: Vietcombank)" />
+    <input class="form-input" id="bank-account" placeholder="Số tài khoản" />
+    <input class="form-input" id="bank-owner" placeholder="Tên chủ tài khoản" />
+    <div class="amount-row">
+      <div class="amount-chip" onclick="setAmount('bank-amount',50000)">50K</div>
+      <div class="amount-chip" onclick="setAmount('bank-amount',100000)">100K</div>
+      <div class="amount-chip" onclick="setAmount('bank-amount',200000)">200K</div>
+      <div class="amount-chip" onclick="setAmount('bank-amount',500000)">500K</div>
+    </div>
+    <input class="form-input" id="bank-amount" placeholder="Số tiền (đ)" type="number" />
+    <button class="btn-submit" onclick="submitRut('bank')">Gửi yêu cầu rút tiền</button>
+  </div>
+
+  <div class="form-card" id="form-sieuvre">
+    <h3>⚡ Rút qua Thẻ Siêu Rẻ</h3>
+    <select class="form-select" id="sr-nha-mang">
+      <option value="">Chọn nhà mạng</option>
+      <option>Viettel</option><option>Mobifone</option><option>Vinaphone</option><option>Vietnamobile</option>
+    </select>
+    <select class="form-select" id="sr-menh-gia">
+      <option value="">Chọn mệnh giá</option>
+      <option value="50000">50.000đ</option><option value="100000">100.000đ</option>
+      <option value="200000">200.000đ</option><option value="500000">500.000đ</option>
+    </select>
+    <input class="form-input" id="sr-sdt" placeholder="Số điện thoại nhận thẻ" type="tel" />
+    <button class="btn-submit" onclick="submitRut('sieuvre')">Đổi thẻ Siêu Rẻ</button>
+  </div>
+
+  <div class="form-card" id="form-fast">
+    <h3>🚀 Gạch thẻ Fast</h3>
+    <select class="form-select" id="fast-nha-mang">
+      <option value="">Chọn nhà mạng</option>
+      <option>Viettel</option><option>Mobifone</option><option>Vinaphone</option>
+    </select>
+    <select class="form-select" id="fast-menh-gia">
+      <option value="">Chọn mệnh giá</option>
+      <option value="50000">50.000đ</option><option value="100000">100.000đ</option>
+      <option value="200000">200.000đ</option><option value="500000">500.000đ</option>
+    </select>
+    <input class="form-input" id="fast-sdt" placeholder="Số điện thoại" type="tel" />
+    <button class="btn-submit" onclick="submitRut('fast')">Gạch thẻ Fast</button>
+  </div>
+
+  <div class="form-card" id="form-thecao">
+    <h3>🎴 Đổi thẻ cào</h3>
+    <select class="form-select" id="tc-nha-mang">
+      <option value="">Chọn nhà mạng</option>
+      <option>Viettel</option><option>Mobifone</option><option>Vinaphone</option>
+      <option>Vietnamobile</option><option>Gmobile</option>
+    </select>
+    <select class="form-select" id="tc-menh-gia">
+      <option value="">Chọn mệnh giá</option>
+      <option value="50000">50.000đ</option><option value="100000">100.000đ</option>
+      <option value="200000">200.000đ</option><option value="500000">500.000đ</option>
+    </select>
+    <button class="btn-submit" onclick="submitRut('thecao')">Đổi thẻ cào</button>
+  </div>
+</div>
+
+<script>
+  const BOT_API = 'https://thichtien-production.up.railway.app';
+  let currentUser = null;
+  let currentBalance = 0;
+
+  function showToast(msg, error) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast' + (error ? ' error' : '');
+    t.style.display = 'block';
+    setTimeout(() => t.style.display = 'none', 3000);
+  }
+
+  function selectMethod(el) {
+    document.querySelectorAll('.method-item').forEach(i => i.classList.remove('selected'));
+    el.classList.add('selected');
+    document.querySelectorAll('.form-card').forEach(f => f.classList.remove('show'));
+    document.getElementById('form-' + el.dataset.method).classList.add('show');
+  }
+
+  function setAmount(id, val) {
+    document.getElementById(id).value = val;
+  }
+
+  async function submitRut(method) {
+    let amount = 0, info = '', methodName = '';
+
+    if (method === 'bank') {
+      amount = parseInt(document.getElementById('bank-amount').value) || 0;
+      const bankName = document.getElementById('bank-name').value.trim();
+      const acc = document.getElementById('bank-account').value.trim();
+      const owner = document.getElementById('bank-owner').value.trim();
+      if (!bankName || !acc || !owner || !amount) { showToast('Vui lòng điền đầy đủ thông tin!', true); return; }
+      methodName = 'Ngân hàng';
+      info = `Ngân hàng: ${bankName}\nSTK: ${acc}\nChủ TK: ${owner}`;
+    } else if (method === 'sieuvre') {
+      const nm = document.getElementById('sr-nha-mang').value;
+      const mg = document.getElementById('sr-menh-gia').value;
+      const sdt = document.getElementById('sr-sdt').value.trim();
+      if (!nm || !mg || !sdt) { showToast('Vui lòng điền đầy đủ!', true); return; }
+      amount = parseInt(mg);
+      methodName = 'Thẻ Siêu Rẻ';
+      info = `Nhà mạng: ${nm}\nSĐT: ${sdt}`;
+    } else if (method === 'fast') {
+      const nm = document.getElementById('fast-nha-mang').value;
+      const mg = document.getElementById('fast-menh-gia').value;
+      const sdt = document.getElementById('fast-sdt').value.trim();
+      if (!nm || !mg || !sdt) { showToast('Vui lòng điền đầy đủ!', true); return; }
+      amount = parseInt(mg);
+      methodName = 'Gạch thẻ Fast';
+      info = `Nhà mạng: ${nm}\nSĐT: ${sdt}`;
+    } else if (method === 'thecao') {
+      const nm = document.getElementById('tc-nha-mang').value;
+      const mg = document.getElementById('tc-menh-gia').value;
+      if (!nm || !mg) { showToast('Vui lòng chọn đầy đủ!', true); return; }
+      amount = parseInt(mg);
+      methodName = 'Thẻ cào';
+      info = `Nhà mạng: ${nm}`;
+    }
+
+    if (amount < 50000) { showToast('Số tiền tối thiểu 50.000đ!', true); return; }
+    if (amount > currentBalance) { showToast('Số dư không đủ!', true); return; }
+
+    const btn = document.querySelector('#form-' + method + ' .btn-submit');
+    btn.disabled = true;
+    btn.textContent = '⏳ Đang xử lý...';
+
+    try {
+      const r = await fetch(`${BOT_API}/api/withdraw`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: currentUser.id,
+          username: currentUser.username,
+          method: methodName,
+          amount,
+          info
+        })
+      });
+      const data = await r.json();
+
+      if (!r.ok) {
+        let msg = 'Có lỗi xảy ra!';
+        if (data.error === 'banned') msg = 'Tài khoản của bạn đã bị khóa!';
+        if (data.error === 'insufficient_balance') msg = 'Số dư không đủ!';
+        showToast(msg, true);
+        btn.disabled = false;
+        btn.textContent = 'Gửi yêu cầu rút tiền';
+        return;
+      }
+
+      currentBalance = data.newBalance;
+      document.getElementById('balance').innerHTML = currentBalance.toLocaleString('vi') + ' <span class="unit purple">đ</span>';
+      showToast(`✅ Đã gửi yêu cầu! Mã đơn: ${data.orderId}`);
+
+    } catch(e) {
+      showToast('Lỗi kết nối, thử lại sau!', true);
+    }
+
+    btn.disabled = false;
+    btn.textContent = method === 'bank' ? 'Gửi yêu cầu rút tiền' : (method === 'sieuvre' ? 'Đổi thẻ Siêu Rẻ' : method === 'fast' ? 'Gạch thẻ Fast' : 'Đổi thẻ cào');
+  }
+
+  async function init() {
+    const savedToken = localStorage.getItem('discord_token');
+    if (!savedToken) { window.location.href = '/'; return; }
+
+    try {
+      const res = await fetch('https://discord.com/api/users/@me', {
+        headers: { Authorization: 'Bearer ' + savedToken }
+      });
+      const user = await res.json();
+      if (!user.id) { localStorage.removeItem('discord_token'); window.location.href = '/'; return; }
+
+      currentUser = user;
+      const avatar = user.avatar
+        ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`
+        : `https://cdn.discordapp.com/embed/avatars/0.png`;
+
+      document.getElementById('header-avatar').src = avatar;
+      document.getElementById('header-avatar').style.display = 'block';
+      document.getElementById('header-name').textContent = user.username;
+      document.getElementById('sidebar-avatar').src = avatar;
+      document.getElementById('sidebar-name').textContent = user.username;
+
+      const dataRes = await fetch(`${BOT_API}/api/user/${user.id}`);
+      const userData = await dataRes.json();
+
+      if (userData.banned) {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('banned-screen').style.display = 'flex';
+        return;
+      }
+
+      currentBalance = userData.balance || 0;
+      document.getElementById('balance').innerHTML = currentBalance.toLocaleString('vi') + ' <span class="unit purple">đ</span>';
+      document.getElementById('loading').style.display = 'none';
+
+    } catch(e) {
+      localStorage.removeItem('discord_token');
+      window.location.href = '/';
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    init();
+    document.getElementById('menu-btn').addEventListener('click', function() {
+      document.getElementById('sidebar').classList.add('show');
+      document.getElementById('overlay').classList.add('show');
+    });
+    document.getElementById('overlay').addEventListener('click', function() {
+      document.getElementById('sidebar').classList.remove('show');
+      document.getElementById('overlay').classList.remove('show');
+    });
+    document.getElementById('btn-logout').addEventListener('click', function() {
+      localStorage.removeItem('discord_token');
+      window.location.href = '/';
+    });
+  });
+
+  document.addEventListener('contextmenu', e => e.preventDefault());
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'F12') e.preventDefault();
+    if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) e.preventDefault();
+    if (e.ctrlKey && e.key === 'U') e.preventDefault();
+  });
+</script>
+
+<!-- MUSIC PLAYER -->
+<div id="music-player" style="position:fixed;bottom:16px;right:16px;background:#13132a;border:1px solid #222244;border-radius:16px;padding:12px 14px;z-index:500;width:230px;box-shadow:0 8px 24px rgba(0,0,0,.4);">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+    <div style="width:36px;height:36px;background:linear-gradient(135deg,#6c47ff,#a78fff);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;">🎵</div>
+    <div style="flex:1;overflow:hidden;">
+      <div id="music-name" style="font-size:.78rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff;">Music 1</div>
+      <div style="font-size:.65rem;color:#6666aa;">IUMoney Radio</div>
+    </div>
+    <button onclick="closeMusicPlayer()" style="background:none;border:none;color:#555577;font-size:1rem;cursor:pointer;padding:0 2px;">✕</button>
+  </div>
+  <input type="range" id="music-seek" value="0" min="0" max="100" style="width:100%;height:4px;accent-color:#6c47ff;margin-bottom:8px;cursor:pointer;">
+  <div style="display:flex;align-items:center;justify-content:center;gap:14px;">
+    <button onclick="prevMusic()" style="background:none;border:none;color:#a78fff;font-size:1.1rem;cursor:pointer;">⏮</button>
+    <button onclick="toggleMusic()" id="music-play-btn" style="background:#6c47ff;border:none;color:#fff;font-size:1rem;width:34px;height:34px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;">▶</button>
+    <button onclick="nextMusic()" style="background:none;border:none;color:#a78fff;font-size:1.1rem;cursor:pointer;">⏭</button>
+  </div>
+</div>
+
+<div id="music-bubble" onclick="openMusicPlayer()" style="display:none;position:fixed;bottom:16px;right:16px;width:48px;height:48px;background:linear-gradient(135deg,#6c47ff,#a78fff);border-radius:50%;z-index:500;align-items:center;justify-content:center;font-size:1.3rem;cursor:pointer;box-shadow:0 8px 24px rgba(108,71,255,.4);">🎵</div>
+
+<audio id="audio-player"></audio>
+
+<script>
+  const playlist = [
+    { name: 'Music 1', src: '/music/music1.mp3' },
+    { name: 'Music 2', src: '/music/music2.mp3' },
+    { name: 'Music 3', src: '/music/music3.mp3' },
+    { name: 'Music 4', src: '/music/music4.mp3' },
+    { name: 'Music 5', src: '/music/music5.mp3' },
+  ];
+  let currentTrack = 0;
+  let isPlaying = false;
+  const audio = document.getElementById('audio-player');
+
+  function loadTrack(i, autoplay) {
+    currentTrack = i;
+    audio.src = playlist[i].src;
+    document.getElementById('music-name').textContent = playlist[i].name;
+    if (autoplay) { audio.play(); isPlaying = true; document.getElementById('music-play-btn').textContent = '⏸'; }
+  }
+  function toggleMusic() {
+    if (isPlaying) { audio.pause(); isPlaying = false; document.getElementById('music-play-btn').textContent = '▶'; }
+    else { audio.play(); isPlaying = true; document.getElementById('music-play-btn').textContent = '⏸'; }
+  }
+  function nextMusic() { loadTrack((currentTrack + 1) % playlist.length, true); }
+  function prevMusic() { loadTrack((currentTrack - 1 + playlist.length) % playlist.length, true); }
+  function closeMusicPlayer() {
+    document.getElementById('music-player').style.display = 'none';
+    document.getElementById('music-bubble').style.display = 'flex';
+  }
+  function openMusicPlayer() {
+    document.getElementById('music-player').style.display = 'block';
+    document.getElementById('music-bubble').style.display = 'none';
+  }
+  audio.addEventListener('ended', nextMusic);
+  audio.addEventListener('timeupdate', function() {
+    if (audio.duration) document.getElementById('music-seek').value = (audio.currentTime / audio.duration) * 100;
+  });
+  document.getElementById('music-seek').addEventListener('input', function() {
+    if (audio.duration) audio.currentTime = (this.value / 100) * audio.duration;
+  });
+  loadTrack(0, false);
+</script>
+
+</body>
+  </html>
