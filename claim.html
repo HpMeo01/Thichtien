@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ThíchTiền - Nhận thưởng</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Be Vietnam Pro', sans-serif; background: #0a0a14; color: #fff; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .card { background: #13132a; border: 1px solid #222244; border-radius: 20px; padding: 36px 28px; text-align: center; max-width: 360px; width: 100%; }
+  .icon { font-size: 3.5rem; margin-bottom: 16px; }
+  h1 { font-size: 1.3rem; font-weight: 800; margin-bottom: 10px; }
+  p { font-size: .88rem; color: #9999bb; line-height: 1.6; margin-bottom: 20px; }
+  .reward { font-size: 2rem; font-weight: 800; color: #4ade80; margin-bottom: 6px; }
+  .task-name { font-size: .8rem; color: #6666aa; margin-bottom: 24px; }
+  .btn { display: inline-block; background: #6c47ff; color: #fff; border: none; border-radius: 12px; padding: 14px 32px; font-size: .92rem; font-weight: 700; font-family: inherit; cursor: pointer; text-decoration: none; }
+  .btn:hover { opacity: .85; }
+  .spinner { width: 40px; height: 40px; border: 3px solid #222244; border-top-color: #6c47ff; border-radius: 50%; animation: spin .7s linear infinite; margin: 0 auto 20px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .error { color: #ff6666; }
+</style>
+</head>
+<body>
+
+<div class="card" id="card">
+  <div class="spinner"></div>
+  <h1>Đang xác nhận...</h1>
+  <p>Vui lòng đợi trong giây lát</p>
+</div>
+
+<script>
+  const BOT_API = 'https://thichtien-production.up.railway.app';
+
+  function getToken() {
+    const path = window.location.pathname;
+    const parts = path.split('/claim/');
+    return parts[1] || '';
+  }
+
+  async function init() {
+    const token = getToken();
+    const card = document.getElementById('card');
+
+    if (!token) {
+      card.innerHTML = `<div class="icon">❌</div><h1 class="error">Link không hợp lệ</h1><p>Vui lòng quay lại trang nhiệm vụ.</p><a href="/nhiemvu" class="btn">Về trang nhiệm vụ</a>`;
+      return;
+    }
+
+    const savedToken = localStorage.getItem('discord_token');
+    if (!savedToken) {
+      card.innerHTML = `<div class="icon">🔒</div><h1 class="error">Chưa đăng nhập</h1><p>Vui lòng đăng nhập để nhận thưởng.</p><a href="/" class="btn">Đăng nhập</a>`;
+      return;
+    }
+
+    try {
+      const userRes = await fetch('https://discord.com/api/users/@me', {
+        headers: { Authorization: 'Bearer ' + savedToken }
+      });
+      const user = await userRes.json();
+      if (!user.id) {
+        card.innerHTML = `<div class="icon">🔒</div><h1 class="error">Phiên đăng nhập hết hạn</h1><a href="/" class="btn">Đăng nhập lại</a>`;
+        return;
+      }
+
+      const claimRes = await fetch(`${BOT_API}/api/claim/${token}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id })
+      });
+      const data = await claimRes.json();
+
+      if (!claimRes.ok) {
+        let msg = 'Có lỗi xảy ra, vui lòng thử lại.';
+        if (data.error === 'already_used') msg = 'Link này đã được sử dụng rồi!';
+        if (data.error === 'wrong_user') msg = 'Link này không dành cho tài khoản của bạn!';
+        if (data.error === 'max_reached') msg = 'Bạn đã đạt giới hạn lượt hôm nay!';
+        if (data.error === 'banned') msg = 'Tài khoản của bạn đã bị khóa!';
+        if (data.error === 'invalid_token') msg = 'Link không hợp lệ hoặc đã hết hạn!';
+        card.innerHTML = `<div class="icon">❌</div><h1 class="error">Không thể nhận thưởng</h1><p>${msg}</p><a href="/nhiemvu" class="btn">Về trang nhiệm vụ</a>`;
+        return;
+      }
+
+      card.innerHTML = `
+        <div class="icon">🎉</div>
+        <h1>Nhận thưởng thành công!</h1>
+        <div class="reward">+${data.reward.toLocaleString('vi')}đ</div>
+        <div class="task-name">${data.taskName}</div>
+        <p>Số dư hiện tại: <b style="color:#a78fff">${data.newBalance.toLocaleString('vi')}đ</b></p>
+        <a href="/nhiemvu" class="btn">Tiếp tục nhiệm vụ</a>
+      `;
+    } catch (e) {
+      card.innerHTML = `<div class="icon">❌</div><h1 class="error">Lỗi kết nối</h1><p>Vui lòng thử lại sau.</p><a href="/nhiemvu" class="btn">Về trang nhiệm vụ</a>`;
+    }
+  }
+
+  init();
+</script>
+</body>
+  </html>
