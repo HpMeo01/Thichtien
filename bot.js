@@ -1,3 +1,5 @@
+console.log('DEBUG API_KEY length:', API_KEY ? API_KEY.length : 'undefined');
+console.log('DEBUG BIN_ID:', BIN_ID);
 const { Client, GatewayIntentBits, SlashCommandBuilder, REST, Routes, EmbedBuilder } = require('discord.js');
 const fetch = require('node-fetch');
 const express = require('express');
